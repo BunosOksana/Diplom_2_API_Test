@@ -13,7 +13,6 @@ import static org.hamcrest.CoreMatchers.is;
 
 public class CreateOrderTest {
     private String accessToken;
-    private List<String> validIngredients;
 
     @After
     public void tearDown() {
@@ -32,11 +31,6 @@ public class CreateOrderTest {
         String name = "Test User";
         ValidatableResponse response = UserClient.createUser(email, password, name);
         accessToken = UserClient.extractAccessToken(response);
-
-        validIngredients = Orders.getIngredients()
-                .extract()
-                .jsonPath()
-                .getList("data._id");
     }
 
     @Test

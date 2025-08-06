@@ -10,12 +10,10 @@ import org.junit.Test;
 import java.util.List;
 
 import static java.util.Optional.empty;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.*;
 
 public class GetUserOrderTest {
     private String accessToken;
-    private List<String> validIngredients;
 
     @After
     public void tearDown() {
@@ -34,11 +32,6 @@ public class GetUserOrderTest {
         String name = "Test User";
         ValidatableResponse response = UserClient.createUser(email, password, name);
         accessToken = UserClient.extractAccessToken(response);
-
-        validIngredients = Orders.getIngredients()
-                .extract()
-                .jsonPath()
-                .getList("data._id");
     }
 
     @Test
@@ -55,27 +48,19 @@ public class GetUserOrderTest {
                 .jsonPath()
                 .getList("data.findAll { it.type in ['main', 'sauce'] }._id");
 
-        Orders.createOrder(List.of(buns.get(0), buns.get(0), fillings.get(0)), accessToken);
+        List<String> orderIngredients = List.of(buns.get(0), buns.get(0), fillings.get(0));
+        Orders.createOrder(orderIngredients, accessToken);
         ValidatableResponse response = Orders.getUserOrder(accessToken);
         response
                 .statusCode(200)
-                .body("orders", not(empty()));
+                .body("orders", not(empty()))
+                .body("orders[0].ingredients", hasItems(orderIngredients.toArray()));
     }
 
     @Test
     @DisplayName("Получение заказов пользователя")
     @Description("Получение заказов неавторизованного пользователя")
     public void getUserOrdersWithoutAuth_fail() {
-        List<String> buns = Orders.getIngredients()
-                .extract()
-                .jsonPath()
-                .getList("data.findAll { it.type == 'bun' }._id");
-
-        List<String> fillings = Orders.getIngredients()
-                .extract()
-                .jsonPath()
-                .getList("data.findAll { it.type in ['main', 'sauce'] }._id");
-
         ValidatableResponse response = Orders.getUserOrder("invalid_token");
         response
                 .statusCode(401)
